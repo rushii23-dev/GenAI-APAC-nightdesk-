@@ -1,0 +1,329 @@
+/* Nightdesk — writing at a lamp-lit desk after dark.
+   One accent (the lamp), one serif for writing, one sans for chrome. */
+
+:root {
+  --ink: #12141a;
+  --panel: #191c24;
+  --line: #272c38;
+  --text: #e6e4de;
+  --muted: #868da0;
+  --lamp: #e0a253;
+  --alert: #cf5c6a;
+  --ok: #6fae8b;
+
+  --serif: "Newsreader", Georgia, serif;
+  --sans: "Inter", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, textarea { font: inherit; color: inherit; }
+
+:focus-visible { outline: 2px solid var(--lamp); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+.boot { display: grid; place-items: center; height: 100%; color: var(--muted); }
+
+/* ------------------------------------------------------------- buttons */
+
+.btn {
+  border: 1px solid var(--line);
+  background: transparent;
+  border-radius: 3px;
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.btn:hover:not(:disabled) { border-color: var(--muted); }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-lamp { background: var(--lamp); border-color: var(--lamp); color: #17130c; font-weight: 500; }
+.btn-lamp:hover:not(:disabled) { background: #eab26a; border-color: #eab26a; }
+.btn-quiet { color: var(--muted); }
+.full { width: 100%; margin-bottom: 0.5rem; }
+
+/* ---------------------------------------------------------- sign-in gate */
+
+.gate { display: grid; place-items: center; min-height: 100%; padding: 2rem; }
+
+.gate-inner { max-width: 30rem; }
+
+.gate-kicker { color: var(--muted); font-size: 0.85rem; margin: 0 0 1.5rem; }
+
+.gate-title {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(3rem, 12vw, 5.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.25rem;
+  /* the lamp: a warm pool of light behind the title */
+  text-shadow: 0 0 60px rgba(224, 162, 83, 0.28);
+}
+
+.gate-body {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #c3c1bb;
+  max-width: 34ch;
+  margin: 0 0 2rem;
+}
+
+.err { color: var(--alert); font-size: 0.85rem; margin-top: 1rem; }
+
+/* ---------------------------------------------------------------- shell */
+
+.shell { display: flex; flex-direction: column; height: 100%; }
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.mark { font-family: var(--serif); font-size: 1.15rem; }
+
+.who { display: flex; align-items: center; gap: 0.75rem; }
+
+.uid { color: var(--muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+
+.cols { display: grid; grid-template-columns: 1fr 22rem; flex: 1; min-height: 0; }
+
+@media (max-width: 860px) {
+  .cols { grid-template-columns: 1fr; }
+  .rail { border-left: none; border-top: 1px solid var(--line); }
+}
+
+/* ------------------------------------------------- the writing column */
+
+.page {
+  overflow-y: auto;
+  padding: 2.5rem clamp(1.25rem, 6vw, 5rem) 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.empty { font-family: var(--serif); color: var(--muted); font-size: 1.1rem; }
+
+/* No chat bubbles. The page reads as writing: their voice plain,
+   your own voice marked by the lamp-coloured rule. */
+.line {
+  font-family: var(--serif);
+  font-size: 1.06rem;
+  line-height: 1.75;
+  max-width: 62ch;
+  margin: 0 0 1.4rem;
+  white-space: pre-wrap;
+}
+
+.line-mine {
+  border-left: 2px solid var(--lamp);
+  padding-left: 1rem;
+  color: #f2efe8;
+}
+
+.line-theirs { color: #b9b7b1; padding-left: 1rem; }
+
+.thinking { color: var(--muted); font-style: italic; }
+
+.notice {
+  font-size: 0.85rem;
+  color: var(--lamp);
+  border-top: 1px solid var(--line);
+  padding-top: 0.75rem;
+  margin: 0 0 0.75rem;
+}
+
+.composer { margin-top: auto; padding-top: 1rem; }
+
+.composer textarea {
+  width: 100%;
+  max-width: 62ch;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.85rem 1rem;
+  font-family: var(--serif);
+  font-size: 1rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: 62ch;
+  margin-top: 0.6rem;
+}
+
+.hint { color: var(--muted); font-size: 0.75rem; margin-right: auto; }
+
+/* ------------------------------------------------------------- the rail */
+
+.rail {
+  border-left: 1px solid var(--line);
+  background: var(--panel);
+  overflow-y: auto;
+  padding: 1rem 1.1rem 2rem;
+}
+
+.tabs { display: flex; gap: 0.25rem; margin-bottom: 1.1rem; }
+
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--muted);
+  padding: 0.3rem 0.1rem;
+  margin-right: 0.9rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.tab-on { color: var(--text); border-bottom-color: var(--lamp); }
+
+.rail-empty, .rail-note {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  margin: 0 0 1rem;
+}
+
+.rail-note.small { font-size: 0.72rem; word-break: break-all; }
+
+.entries { list-style: none; margin: 0; padding: 0; }
+
+.entry { border-top: 1px solid var(--line); padding: 1rem 0; }
+
+.entry-head { display: flex; justify-content: space-between; gap: 0.5rem; align-items: baseline; }
+
+.entry h3 { font-family: var(--serif); font-weight: 400; font-size: 1rem; margin: 0; }
+
+.entry-summary { font-size: 0.85rem; line-height: 1.6; color: #bfbdb7; margin: 0.5rem 0; }
+
+.entry-meta { font-size: 0.72rem; color: var(--muted); margin: 0 0 0.5rem; }
+
+.mood { font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
+.mood-bright, .mood-elated { color: var(--lamp); }
+.mood-low { color: var(--alert); }
+
+.tags { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+.tag {
+  font-size: 0.7rem;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 0.1rem 0.4rem;
+}
+
+/* --------------------------------------------------------- ask + security */
+
+.ask input, .sec input {
+  width: 100%;
+  background: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.55rem 0.7rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.88rem;
+}
+
+.field { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 0.5rem; }
+.field input { margin-top: 0.3rem; }
+
+.ask-res {
+  border-top: 1px solid var(--line);
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+.sources { list-style: none; padding: 0; margin: 0.9rem 0 0; font-size: 0.75rem; color: var(--muted); }
+.sources li { padding: 0.25rem 0; border-top: 1px solid var(--line); }
+.score { float: right; font-variant-numeric: tabular-nums; }
+
+.log { list-style: none; padding: 0; margin: 1rem 0 0; font-size: 0.76rem; line-height: 1.55; }
+.log li { padding: 0.5rem 0 0.5rem 0.7rem; border-left: 2px solid var(--line); margin-bottom: 0.4rem; }
+.log .ok { border-left-color: var(--ok); color: #cfd6d0; }
+.log .bad { border-left-color: var(--alert); color: #f0c2c7; }
+
+code { font-size: 0.9em; color: var(--lamp); }
+
+/* ------------------------------------------------------------- the trend */
+
+.trend-chart { display: block; width: 100%; height: auto; margin-bottom: 0.6rem; }
+
+.trend-axis { stroke: var(--line); stroke-width: 1; }
+
+.trend-mood {
+  fill: none;
+  stroke: var(--lamp);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Energy runs underneath and stays quieter. The app has one accent and
+   this panel does not get to add a second. */
+.trend-energy {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-linejoin: round;
+  opacity: 0.55;
+}
+
+.trend-dot { fill: var(--lamp); stroke: var(--panel); stroke-width: 1; }
+
+.trend-legend { display: flex; gap: 1rem; font-size: 0.7rem; margin: 0 0 1rem; }
+
+.trend-key { color: var(--muted); border-left: 2px solid var(--line); padding-left: 0.35rem; }
+.trend-key-mood { border-left-color: var(--lamp); }
+
+.trend-read {
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text);
+  border-top: 1px solid var(--line);
+  padding-top: 0.9rem;
+  margin: 0 0 1.2rem;
+}
+
+.trend-heading { font-size: 0.72rem; color: var(--muted); margin: 0 0 0.2rem; }
+
+.trend-themes { list-style: none; margin: 0; padding: 0; font-size: 0.78rem; }
+
+.trend-themes li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-top: 1px solid var(--line);
+  color: #bfbdb7;
+}
+
+.trend-count { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* The rail carries four tabs now. Let the row wrap rather than break a
+   label across two lines. */
+.tabs { flex-wrap: wrap; row-gap: 0.15rem; }
+.tab { margin-right: 0.75rem; white-space: nowrap; }

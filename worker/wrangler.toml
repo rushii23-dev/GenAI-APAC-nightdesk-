@@ -1,0 +1,12 @@
+name = "nightdesk-api"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Not secrets. The Gemini key is set separately with `wrangler secret put`.
+FIREBASE_PROJECT_ID = "nightdesk-journal-cbb89"
+
+# Lock this to your Firebase Hosting URL once deployed, e.g.
+# "https://nightdesk-journal.web.app". Leave "*" only while developing.
+ALLOWED_ORIGIN = "https://nightdesk-journal-cbb89.web.app"

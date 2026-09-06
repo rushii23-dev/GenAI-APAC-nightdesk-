@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny. Nothing outside /users/{uid} is reachable at all.
+
+    match /users/{uid}/entries/{entryId} {
+
+      function isOwner() {
+        return request.auth != null && request.auth.uid == uid;
+      }
+
+      // Shape and size validation. The client may only create documents
+      // that look exactly like a journal entry, so a hostile client cannot
+      // stuff arbitrary payloads into its own tenant space.
+      function validEntry(d) {
+        return d.keys().hasOnly(['title','summary','mood','energy','themes',
+                                 'openQuestion','vector','turnCount','createdAt'])
+          && d.title is string      && d.title.size() > 0 && d.title.size() < 200
+          && d.summary is string    && d.summary.size() < 4000
+          && d.mood in ['low','flat','steady','bright','elated']
+          && d.energy is int        && d.energy >= 1 && d.energy <= 5
+          && d.themes is list       && d.themes.size() <= 6
+          && d.vector is list       && d.vector.size() == 768
+          && d.createdAt == request.time;
+      }
+
+      allow read:   if isOwner();
+      allow create: if isOwner() && validEntry(request.resource.data);
+      allow delete: if isOwner();
+      allow update: if false;  // entries are immutable once written
+    }
+
+    match /users/{uid}/{other=**} {
+      allow read:  if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+  }
+}
