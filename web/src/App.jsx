@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import {
   addDoc, collection, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, setDoc,
@@ -44,13 +44,6 @@ function SignIn() {
 
 /* --------------------------------------------------------------- journal */
 
-const TABS = [
-  ["entries", "Entries"],
-  ["ask", "Ask your past self"],
-  ["trend", "Trend"],
-  ["security", "Security"],
-];
-
 function Journal({ user }) {
   const [turns, setTurns] = useState([]);
   const [draft, setDraft] = useState("");
@@ -62,7 +55,11 @@ function Journal({ user }) {
 
   useEffect(() => {
     const q = query(collection(db, "users", user.uid, "entries"), orderBy("createdAt", "desc"));
-    return onSnapshot(q, (s) => setEntries(s.docs.map((d) => ({ id: d.id, ...d.data() }))));
+    return onSnapshot(
+      q,
+      (s) => setEntries(s.docs.map((d) => ({ id: d.id, ...d.data() }))),
+      (e) => console.error("entries listener:", e.code, e.message)
+    );
   }, [user.uid]);
 
   useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), [turns, busy]);
@@ -122,7 +119,11 @@ function Journal({ user }) {
 
       <div className="cols">
         <section className="page">
-          {turns.length === 0 && !busy && <Opening entries={entries} />}
+          {turns.length === 0 && !busy && (
+            <p className="empty">
+              Start anywhere. What&rsquo;s taking up room in your head tonight?
+            </p>
+          )}
 
           {turns.map((t, i) => (
             <p key={i} className={t.role === "user" ? "line line-mine" : "line line-theirs"}>
@@ -158,62 +159,22 @@ function Journal({ user }) {
 
         <aside className="rail">
           <nav className="tabs">
-            {TABS.map(([key, label]) => (
+            {["entries", "ask", "security"].map((t) => (
               <button
-                key={key}
-                className={tab === key ? "tab tab-on" : "tab"}
-                onClick={() => setTab(key)}
+                key={t}
+                className={tab === t ? "tab tab-on" : "tab"}
+                onClick={() => setTab(t)}
               >
-                {label}
+                {t === "entries" ? "Entries" : t === "ask" ? "Ask your past self" : "Security"}
               </button>
             ))}
           </nav>
 
           {tab === "entries" && <Entries entries={entries} />}
           {tab === "ask" && <AskPast entries={entries} />}
-          {tab === "trend" && <Trend entries={entries} />}
           {tab === "security" && <SecurityConsole user={user} entries={entries} />}
         </aside>
       </div>
-    </div>
-  );
-}
-
-/* The page you land on. The lamp is lit, the date is stated, and if a past
-   session left a question behind it is waiting here rather than buried in the
-   rail. Nothing is fetched for this — it reads the entries already in memory. */
-function Opening({ entries }) {
-  const now = new Date();
-  const hour = now.getHours();
-
-  const greeting =
-    hour < 5 ? "Still awake." :
-    hour < 12 ? "Good morning." :
-    hour < 17 ? "Good afternoon." :
-    hour < 22 ? "Good evening." : "It’s late.";
-
-  const invitation =
-    hour >= 17 || hour < 5
-      ? "What’s taking up room in your head tonight?"
-      : "What’s taking up room in your head?";
-
-  // entries arrive newest first, so this is the most recent question left behind
-  const unanswered = entries.find((e) => e.openQuestion);
-
-  return (
-    <div className="opening">
-      <p className="opening-date">
-        {now.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
-      </p>
-      <h1 className="opening-greet">{greeting}</h1>
-      <p className="opening-invite">{invitation}</p>
-
-      {unanswered && (
-        <div className="opening-echo">
-          <p className="opening-echo-label">Last time you left yourself a question</p>
-          <p className="opening-echo-q">{unanswered.openQuestion}</p>
-        </div>
-      )}
     </div>
   );
 }
@@ -414,173 +375,6 @@ function SecurityConsole({ user, entries }) {
           </li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-/* -------------------------------------------- phase 4: the shape of a month */
-
-/* Mood is categorical in the entry schema; a timeline needs it on a line.
-   Everything below is arithmetic over entries this session already read under
-   its own rules — no query, no endpoint, nothing leaves the browser. */
-const MOOD_SCALE = { low: 1, flat: 2, steady: 3, bright: 4, elated: 5 };
-
-const CHART = { w: 280, h: 120, top: 12, right: 10, bottom: 14, left: 10 };
-
-function chartX(i, n) {
-  if (n < 2) return CHART.w / 2;
-  return CHART.left + (i * (CHART.w - CHART.left - CHART.right)) / (n - 1);
-}
-
-function chartY(value) {
-  return CHART.top + ((5 - value) * (CHART.h - CHART.top - CHART.bottom)) / 4;
-}
-
-function mean(nums) {
-  return nums.reduce((a, b) => a + b, 0) / nums.length;
-}
-
-function topThemes(entries, k = 3) {
-  const counts = new Map();
-  for (const e of entries) {
-    for (const t of e.themes || []) {
-      const name = String(t).trim();
-      if (name) counts.set(name, (counts.get(name) || 0) + 1);
-    }
-  }
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-    .slice(0, k);
-}
-
-/* The newest third against the oldest third. A journal is not a clinical
-   instrument, so this describes the writing and never the writer. */
-function describeTrend(moods, energies) {
-  const n = moods.length;
-  const size = Math.max(1, Math.floor(n / 3));
-  const shift = mean(moods.slice(-size)) - mean(moods.slice(0, size));
-
-  const moodClause =
-    shift > 0.34
-      ? `Your mood has been lifting across your last ${n} entries`
-      : shift < -0.34
-        ? `Your mood has been sitting lower across your last ${n} entries`
-        : `Your mood has held fairly steady across your last ${n} entries`;
-
-  if (energies.length !== n) return `${moodClause}.`;
-
-  const energyShift = mean(energies.slice(-size)) - mean(energies.slice(0, size));
-  const energyClause =
-    energyShift > 0.34
-      ? "and your energy has been higher lately"
-      : energyShift < -0.34
-        ? "and your energy has been lower lately"
-        : "with your energy holding about the same";
-
-  return `${moodClause}, ${energyClause}.`;
-}
-
-function Trend({ entries }) {
-  const { points, themes } = useMemo(() => {
-    // `entries` arrives newest first; a timeline reads oldest first.
-    const mapped = [...entries]
-      .reverse()
-      .map((e) => ({
-        id: e.id,
-        title: e.title,
-        mood: e.mood,
-        moodValue: MOOD_SCALE[e.mood] ?? null,
-        energy: Number.isInteger(e.energy) ? Math.min(5, Math.max(1, e.energy)) : null,
-        date: e.createdAt?.toDate?.().toLocaleDateString() ?? "just now",
-      }))
-      // An entry with an unreadable mood is dropped rather than guessed at.
-      .filter((p) => p.moodValue !== null);
-
-    return { points: mapped, themes: topThemes(entries) };
-  }, [entries]);
-
-  if (!points.length)
-    return (
-      <p className="rail-empty">
-        Nothing to chart yet. Save an evening or two and the shape of them shows up here.
-      </p>
-    );
-
-  const n = points.length;
-  const moodLine = points.map((p, i) => `${chartX(i, n)},${chartY(p.moodValue)}`).join(" ");
-  // Energy is only drawn when every point has one, so the line never implies
-  // a reading that isn't there.
-  const energies = points.map((p) => p.energy).filter((v) => v !== null);
-  const energyLine =
-    energies.length === n
-      ? points.map((p, i) => `${chartX(i, n)},${chartY(p.energy)}`).join(" ")
-      : null;
-
-  const reading =
-    n < 2
-      ? "One entry so far. A trend needs a few more evenings than this."
-      : describeTrend(points.map((p) => p.moodValue), energies);
-
-  return (
-    <div className="trend">
-      <p className="rail-note">
-        Drawn here in the browser from entries this session already read. No query, no
-        request, nothing sent anywhere to make it.
-      </p>
-
-      <svg
-        className="trend-chart"
-        viewBox={`0 0 ${CHART.w} ${CHART.h}`}
-        role="img"
-        aria-label={`Mood and energy across ${n} ${n === 1 ? "entry" : "entries"}, oldest on the left. ${reading}`}
-      >
-        <line
-          className="trend-axis"
-          x1={CHART.left} y1={chartY(5)} x2={CHART.w - CHART.right} y2={chartY(5)}
-        />
-        <line
-          className="trend-axis"
-          x1={CHART.left} y1={chartY(1)} x2={CHART.w - CHART.right} y2={chartY(1)}
-        />
-
-        {energyLine && n > 1 && <polyline className="trend-energy" points={energyLine} />}
-        {n > 1 && <polyline className="trend-mood" points={moodLine} />}
-
-        {points.map((p, i) => (
-          <circle
-            key={p.id}
-            className="trend-dot"
-            cx={chartX(i, n)}
-            cy={chartY(p.moodValue)}
-            r="2.5"
-          >
-            <title>{`${p.title} — ${p.date} — ${p.mood}`}</title>
-          </circle>
-        ))}
-      </svg>
-
-      {n > 1 && (
-        <p className="trend-legend">
-          <span className="trend-key trend-key-mood">mood</span>
-          {energyLine && <span className="trend-key trend-key-energy">energy</span>}
-        </p>
-      )}
-
-      <p className="trend-read">{reading}</p>
-
-      {!!themes.length && (
-        <>
-          <p className="trend-heading">what keeps coming up</p>
-          <ul className="trend-themes">
-            {themes.map(([name, count]) => (
-              <li key={name}>
-                <span>{name}</span>
-                <span className="trend-count">{count}</span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
     </div>
   );
 }

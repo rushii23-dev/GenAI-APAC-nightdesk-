@@ -11,9 +11,4 @@ firebase-debug.log
 ui-debug.log
 firestore-debug.log
 .wrangler/
-
-# Backup of the old nested repo that lived in tests/ (node_modules only)
-tests/git-backup-old-node_modules-repo/
-
-# Working notes, kept locally
-local-docs/
+.env.local
