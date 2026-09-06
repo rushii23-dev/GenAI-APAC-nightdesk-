@@ -32,18 +32,34 @@ const MAX_TURN_CHARS = 8000;
 
 /* ------------------------------------------------------------------ util */
 
-function cors(env) {
-  return {
-    "Access-Control-Allow-Origin": env.ALLOWED_ORIGIN || "*",
+/**
+ * Explicit origin allowlist, comma-separated in ALLOWED_ORIGINS. The request's
+ * own Origin is echoed back only when it is on the list, so a third-party page
+ * never receives a usable header. Default deny: if the list is unset we omit
+ * the header entirely rather than falling back to "*".
+ */
+function cors(request, env) {
+  const allowed = String(env.ALLOWED_ORIGINS || env.ALLOWED_ORIGIN || "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+
+  const headers = {
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
+    Vary: "Origin",
   };
+  if (!allowed.length) return headers;
+
+  const origin = request.headers.get("Origin") || "";
+  headers["Access-Control-Allow-Origin"] = allowed.includes(origin) ? origin : allowed[0];
+  return headers;
 }
 
-function json(body, status, env) {
+function json(body, status, headers) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json", ...cors(env) },
+    headers: { "Content-Type": "application/json", ...headers },
   });
 }
 
@@ -245,12 +261,14 @@ const ROUTES = {
 
 export default {
   async fetch(request, env) {
-    if (request.method === "OPTIONS") return new Response(null, { headers: cors(env) });
-    if (request.method !== "POST") return json({ error: "Use POST." }, 405, env);
+    const headers = cors(request, env);
+
+    if (request.method === "OPTIONS") return new Response(null, { headers });
+    if (request.method !== "POST") return json({ error: "Use POST." }, 405, headers);
 
     const path = new URL(request.url).pathname;
     const handler = ROUTES[path];
-    if (!handler) return json({ error: "Not found." }, 404, env);
+    if (!handler) return json({ error: "Not found." }, 404, headers);
 
     let uid;
     try {
@@ -259,11 +277,11 @@ export default {
       const body = await request.json();
       const result = await handler(body, env);
       console.log(JSON.stringify({ path, uid })); // uid and action only, never content
-      return json(result, 200, env);
+      return json(result, 200, headers);
     } catch (err) {
-      if (err instanceof AppError) return json({ error: err.message }, err.status, env);
+      if (err instanceof AppError) return json({ error: err.message }, err.status, headers);
       console.log(JSON.stringify({ path, uid, error: err.message }));
-      return json({ error: "Something went wrong. Try again." }, 500, env);
+      return json({ error: "Something went wrong. Try again." }, 500, headers);
     }
   },
 };

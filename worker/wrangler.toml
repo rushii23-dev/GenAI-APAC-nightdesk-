@@ -7,6 +7,8 @@ compatibility_flags = ["nodejs_compat"]
 # Not secrets. The Gemini key is set separately with `wrangler secret put`.
 FIREBASE_PROJECT_ID = "nightdesk-journal-cbb89"
 
-# Lock this to your Firebase Hosting URL once deployed, e.g.
-# "https://nightdesk-journal.web.app". Leave "*" only while developing.
-ALLOWED_ORIGIN = "https://nightdesk-journal-cbb89.web.app"
+# Comma-separated allowlist. The Worker echoes the caller's Origin only if it
+# appears here, and sends no CORS header at all when this is unset (default deny).
+# No trailing slashes: a browser Origin header never has one, and the comparison
+# is exact. Add "http://localhost:5173" while developing against the live Worker.
+ALLOWED_ORIGINS = "https://nightdesk-journal-cbb89.web.app"
