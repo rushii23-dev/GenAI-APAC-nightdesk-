@@ -118,7 +118,6 @@ button, input, textarea { font: inherit; color: inherit; }
   flex-direction: column;
 }
 
-.empty { font-family: var(--serif); color: var(--muted); font-size: 1.1rem; }
 
 /* No chat bubbles. The page reads as writing: their voice plain,
    your own voice marked by the lamp-coloured rule. */
@@ -327,3 +326,120 @@ code { font-size: 0.9em; color: var(--lamp); }
    label across two lines. */
 .tabs { flex-wrap: wrap; row-gap: 0.15rem; }
 .tab { margin-right: 0.75rem; white-space: nowrap; }
+
+/* ---------------------------------------------------------------- the lamp
+
+   The metaphor, actually rendered. A warm pool of light falls from above the
+   writing column and drops off into the dark; a second, fainter wash bounces
+   back off the desk. Both are the one accent at low alpha — no new colour.
+   The rail paints its own opaque panel, so the light stops at its edge. */
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+body::before {
+  background:
+    /* the lamp itself, hung above and slightly left of the writing */
+    radial-gradient(46rem 32rem at 28% 1%, rgba(224, 162, 83, 0.2), transparent 68%),
+    /* what bounces back off the desk */
+    radial-gradient(66rem 44rem at 13% 112%, rgba(224, 162, 83, 0.06), transparent 62%),
+    /* corners fall away, so the pool of light has an edge to be brighter than */
+    radial-gradient(125% 95% at 42% 34%, transparent 38%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+/* A little grain, so the dark reads as a room rather than a void. */
+body::after {
+  opacity: 0.038;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.shell { position: relative; z-index: 1; }
+
+.mark { text-shadow: 0 0 34px rgba(224, 162, 83, 0.22); }
+
+/* ------------------------------------------------------------- the opening */
+
+/* Both this and .composer take margin-top: auto, so the free space in the
+   column divides between them and the opening settles near the middle. */
+.opening { margin-top: auto; max-width: 36rem; padding-bottom: 2rem; }
+
+.opening-date {
+  font-size: 0.74rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 1.6rem;
+}
+
+.opening-greet {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(2.6rem, 6vw, 4.1rem);
+  line-height: 1;
+  letter-spacing: -0.025em;
+  margin: 0 0 1.15rem;
+  text-shadow: 0 0 55px rgba(224, 162, 83, 0.26);
+}
+
+.opening-invite {
+  font-family: var(--serif);
+  font-size: 1.18rem;
+  line-height: 1.65;
+  color: #c8c6c0;
+  max-width: 34ch;
+  margin: 0;
+}
+
+.opening-echo {
+  margin-top: 2.9rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--line);
+  max-width: 36ch;
+}
+
+.opening-echo-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 0.65rem;
+}
+
+.opening-echo-q {
+  font-family: var(--serif);
+  font-size: 1.06rem;
+  line-height: 1.6;
+  color: var(--lamp);
+  margin: 0;
+}
+
+/* ----------------------------------------------------- writing and composer */
+
+/* Each line arrives rather than appearing. Killed by the reduced-motion
+   block at the top of this file. */
+.line { animation: settle 0.5s ease both; }
+
+@keyframes settle {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* The desk edge the composer sits on. */
+.composer { max-width: 62ch; border-top: 1px solid var(--line); padding-top: 1.15rem; }
+
+.composer textarea {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Focus lights the page instead of drawing a box around it. */
+.composer textarea:focus {
+  outline: none;
+  border-color: rgba(224, 162, 83, 0.42);
+  box-shadow: 0 0 0 1px rgba(224, 162, 83, 0.14), 0 0 46px -14px rgba(224, 162, 83, 0.5);
+}

@@ -122,11 +122,7 @@ function Journal({ user }) {
 
       <div className="cols">
         <section className="page">
-          {turns.length === 0 && !busy && (
-            <p className="empty">
-              Start anywhere. What&rsquo;s taking up room in your head tonight?
-            </p>
-          )}
+          {turns.length === 0 && !busy && <Opening entries={entries} />}
 
           {turns.map((t, i) => (
             <p key={i} className={t.role === "user" ? "line line-mine" : "line line-theirs"}>
@@ -179,6 +175,45 @@ function Journal({ user }) {
           {tab === "security" && <SecurityConsole user={user} entries={entries} />}
         </aside>
       </div>
+    </div>
+  );
+}
+
+/* The page you land on. The lamp is lit, the date is stated, and if a past
+   session left a question behind it is waiting here rather than buried in the
+   rail. Nothing is fetched for this — it reads the entries already in memory. */
+function Opening({ entries }) {
+  const now = new Date();
+  const hour = now.getHours();
+
+  const greeting =
+    hour < 5 ? "Still awake." :
+    hour < 12 ? "Good morning." :
+    hour < 17 ? "Good afternoon." :
+    hour < 22 ? "Good evening." : "It’s late.";
+
+  const invitation =
+    hour >= 17 || hour < 5
+      ? "What’s taking up room in your head tonight?"
+      : "What’s taking up room in your head?";
+
+  // entries arrive newest first, so this is the most recent question left behind
+  const unanswered = entries.find((e) => e.openQuestion);
+
+  return (
+    <div className="opening">
+      <p className="opening-date">
+        {now.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
+      </p>
+      <h1 className="opening-greet">{greeting}</h1>
+      <p className="opening-invite">{invitation}</p>
+
+      {unanswered && (
+        <div className="opening-echo">
+          <p className="opening-echo-label">Last time you left yourself a question</p>
+          <p className="opening-echo-q">{unanswered.openQuestion}</p>
+        </div>
+      )}
     </div>
   );
 }
