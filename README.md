@@ -249,22 +249,6 @@ nothing until you rebuild.
 
 ---
 
-## Project structure
-
-```
-web/src/App.jsx        sign-in, journal, entries, ask, trend, security console
-web/src/api.js         attaches a verified ID token to every backend call
-web/src/firebase.js    Firebase client init, reads VITE_ env vars
-web/src/styles.css     design tokens and all styling
-worker/src/index.js    live backend: JWKS verify, Gemini, fencing, rate limit
-worker/wrangler.toml   Worker config: project id and origin allowlist
-functions/index.js     Cloud Functions + Secret Manager equivalent
-firestore.rules        default deny, read own, schema-validated creates, immutable
-tests/rules.test.js    eight assertions proving isolation
-```
-
----
-
 ## Known limitations
 
 - **Firebase App Check is not enforced.** Endpoints accept any request carrying
